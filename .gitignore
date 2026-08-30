@@ -205,3 +205,14 @@ cython_debug/
 marimo/_static/
 marimo/_lsp/
 __marimo__/
+
+/mass_discrepancy/mass_discrepancy.py
+/mass_discrepancy/v_2_mass_discrepancy.py
+/mass_discrepancy/residuals_mass_discrepancy.py
+
+/mass_discrepancy/figuras/D_vs_a.jpg
+/mass_discrepancy/figuras/D_vs_gn_v2.jpg
+/mass_discrepancy/figuras/D_vs_gn.jpg
+/mass_discrepancy/figuras/D_vs_radio.jpg
+
+/Rotmod_LTG
