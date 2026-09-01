@@ -23,6 +23,15 @@ def ajuste(archivo):
     vobs, vgas, vdisk, vbul, errv, radio = datos['Vobs'], datos['Vgas'], datos['Vdisk'], datos['Vbul'], datos['errV'], datos['Rad']
     # print(vobs, vgas, vdisk, vbul)
 
+    # Los valores de la velocidad bariónica se vuelven nan para vgas negativos
+    mascara_negativos = vgas < 0
+    if mascara_negativos.any():
+        ultimo_indice_vgas_negativo = np.where(mascara_negativos)[0][-1]
+        # .iloc modifica las filas por su posición (desde 0 hasta el índice)
+        vgas.iloc[:ultimo_indice_vgas_negativo + 1] = np.nan
+        vdisk.iloc[:ultimo_indice_vgas_negativo + 1] = np.nan
+        vbul.iloc[:ultimo_indice_vgas_negativo + 1] = np.nan
+
     error = 0
 
     # Calcula la velocidad debido a las componentes bariónicas
