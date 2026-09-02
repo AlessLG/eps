@@ -34,8 +34,15 @@ def ajuste(archivo):
 
     error = 0
 
+    # El codigo prueba valores incrementales de Y_disk hasta que D >= 1.
+    Y_disk = 0.5
+    Y_bul = 1.4 * Y_disk
+
     # Calcula la velocidad debido a las componentes bariónicas
-    vbar_2 = vgas**2 + vdisk**2 + vbul**2
+    # vbar_2 = vgas**2 + vdisk**2 + vbul**2
+    vbar_2 = vgas**2 + Y_disk * vdisk**2 + Y_bul * vbul**2
+
+    D = vobs**2/vbar_2
 
     # kpc -> m
     # radio = radio * 3.086e19
