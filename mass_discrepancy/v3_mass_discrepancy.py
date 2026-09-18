@@ -38,8 +38,8 @@ Aceleracion_barionica = np.array([], dtype='f')
 # mu_simple(x) = x/1+x
 # mu_estandar(x) = x/sqrt(1+x^2); x = a/a_0
 # a es la variable independiente
-def mu_inv_simple(a, a_0): return (1 - (a/a_0))/(a/a_0)
-def mu_inv_estandar(a, a_0): return np.sqrt(1 - (a/a_0)**2)/(a/a_0)
+def mu_inv_simple(a, a_0): return (1 + (a/a_0))/(a/a_0)
+def mu_inv_estandar(a, a_0): return np.sqrt(1 + (a/a_0)**2)/(a/a_0)
 
 
 # EXTRACCIÓN DE DATOS
@@ -90,22 +90,16 @@ for archivo in archivos_dat:
     Aceleracion_observable  = np.append(Aceleracion_observable, a_obs)
     Aceleracion_barionica   = np.append(Aceleracion_barionica, a_bar)
 
-# Discrepancia            = Discrepancia[~np.isnan(Discrepancia)]
-# Error_discrepancia      = Error_discrepancia[~np.isnan(Error_discrepancia)]
-# Aceleracion_barionica   = Aceleracion_barionica[~np.isnan(Aceleracion_barionica)]
+a0_obs_simple, cov_obs_simple = curve_fit(mu_inv_simple, Aceleracion_observable, Discrepancia, bounds=(10**(-11), 10**(-9)), nan_policy='omit', sigma=Error_discrepancia)
+a0_obs_estandar, cov_obs_estandar = curve_fit(mu_inv_estandar, Aceleracion_observable, Discrepancia, bounds=(10**(-11), 10**(-9)), nan_policy='omit', sigma=Error_discrepancia)
 
+a0_bar_simple, cov_bar_simple = curve_fit(mu_inv_simple, Aceleracion_barionica, Discrepancia, bounds=(10**(-11), 10**(-9)), nan_policy='omit', sigma=Error_discrepancia)
+a0_bar_estandar, cov_bar_estandar = curve_fit(mu_inv_estandar, Aceleracion_barionica, Discrepancia, bounds=(10**(-11), 10**(-9)), nan_policy='omit', sigma=Error_discrepancia)
 
-# print(len(Discrepancia          ))
-# print(len(Error_discrepancia    ))
-# print(len(Radio                 ))
-# print(len(Aceleracion_observable))
-# print(len(Aceleracion_barionica ))
-
-popt_aobs, pcov_aobs = curve_fit(mu_inv_simple, Aceleracion_observable, Discrepancia, bounds=(10**(-11), 10**(-9)), nan_policy='omit')
-popt_abar, pcov_abar = curve_fit(mu_inv_simple, Aceleracion_barionica, Discrepancia, bounds=(10**(-11), 10**(-9)), nan_policy='omit')
-
-print(popt_aobs, pcov_aobs)
-print(popt_abar, pcov_abar)
+print(a0_obs_simple, np.sqrt(cov_obs_simple))
+print(a0_obs_estandar, np.sqrt(cov_obs_estandar))
+print(a0_bar_simple, np.sqrt(cov_bar_simple))
+print(a0_bar_estandar, np.sqrt(cov_bar_estandar))
 
 # GENERACIÓN DE GRÁFICOS
 fig, (ax1, ax2, ax3) = plt.subplots(3, 1, figsize=(8, 10), dpi=300)
@@ -114,11 +108,13 @@ ax1.errorbar(Radio, Discrepancia, Error_discrepancia, fmt='k.', alpha=0.2, label
 
 x = np.logspace(-8, -11, num=200)
 ax2.errorbar(Aceleracion_observable, Discrepancia, Error_discrepancia, fmt='k.', alpha=0.2, label='Datos')
-ax2.plot(x, mu_inv_simple(x, popt_aobs), color='red', label='Ajuste')
+ax2.plot(x, mu_inv_simple(x, a0_obs_simple), color='red', label=r'Ajuste $\mu$ simple')
+ax2.plot(x, mu_inv_estandar(x, a0_obs_estandar), color='blue', label=r'Ajuste $\mu$ estandar')
 
 x = np.logspace(-8, -12, num=200)
 ax3.errorbar(Aceleracion_barionica, Discrepancia, Error_discrepancia, fmt='k.', alpha=0.2, label='Datos')
-ax3.plot(x, mu_inv_simple(x, popt_abar), color='red', label='Ajuste')
+ax3.plot(x, mu_inv_simple(x, a0_bar_simple), color='red', label='Ajuste')
+ax3.plot(x, mu_inv_estandar(x, a0_bar_estandar), color='blue', label=r'Ajuste $\mu$ estandar')
 
 for ax in (ax1, ax2, ax3):
     ax.set_ylim(-1.5, 20)

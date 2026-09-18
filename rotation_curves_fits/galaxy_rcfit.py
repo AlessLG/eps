@@ -34,11 +34,11 @@ def ajuste(archivo):
     error = 0
     error = np.average(errv/vobs)
 
+    # Los valores de la velocidad bariónica se vuelven nan si corresponden a valores de  vgas negativos
     if ignorar_valores_negativos:
         mascara_negativos = vgas < 0
         if mascara_negativos.any():
             ultimo_indice_vgas_negativo = np.where(mascara_negativos)[0][-1]
-            # Los valores de la velocidad bariónica se vuelven nan para vgas negativos
             # .iloc modifica las filas por su posición (desde 0 hasta el índice)
             vgas.iloc[:ultimo_indice_vgas_negativo + 1] = np.nan
             vdisk.iloc[:ultimo_indice_vgas_negativo + 1] = np.nan
@@ -47,6 +47,7 @@ def ajuste(archivo):
     Y_disk = 0.5 # Según Lelli et al. (2016), valor más realista para el Near-InfraRed (NIR)
     Y_bul = 1.4 * Y_disk # Lelli et al. (2016)
 
+    #vbar_2 = vbar^2
     vbar_2 = abs(vgas)*vgas + Y_disk * abs(vdisk) * vdisk + Y_bul * abs(vbul) * vbul
     D = vobs**2/vbar_2
 
