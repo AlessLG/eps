@@ -38,8 +38,8 @@ Aceleracion_barionica = np.array([], dtype='f')
 # mu_simple(x) = x/1+x
 # mu_estandar(x) = x/sqrt(1+x^2); x = a/a_0
 # a es la variable independiente
-def mu_inv_simple(a, a_0): return (a/a_0)/(1 - (a/a_0))
-def mu_inv_estandar(a, a_0): return (a/a_0)/np.sqrt(1 - (a/a_0)**2)
+def mu_inv_simple(a, a_0): return (1 - (a/a_0))/(a/a_0)
+def mu_inv_estandar(a, a_0): return np.sqrt(1 - (a/a_0)**2)/(a/a_0)
 
 
 # EXTRACCIÓN DE DATOS
@@ -109,22 +109,24 @@ print(popt_abar, pcov_abar)
 
 # GENERACIÓN DE GRÁFICOS
 fig, (ax1, ax2, ax3) = plt.subplots(3, 1, figsize=(8, 10), dpi=300)
-x = np.linspace(10**(-8), 10**(-11))
 
-ax1.errorbar(Radio, Discrepancia, Error_discrepancia, fmt='k.', alpha=0.2) 
+ax1.errorbar(Radio, Discrepancia, Error_discrepancia, fmt='k.', alpha=0.2, label='Datos') 
 
-ax2.errorbar(Aceleracion_observable, Discrepancia, Error_discrepancia, fmt='k.', alpha=0.2)
-ax2.plot(x, mu_inv_simple(x, popt_aobs), color='red')
+x = np.logspace(-8, -11, num=200)
+ax2.errorbar(Aceleracion_observable, Discrepancia, Error_discrepancia, fmt='k.', alpha=0.2, label='Datos')
+ax2.plot(x, mu_inv_simple(x, popt_aobs), color='red', label='Ajuste')
 
-ax3.errorbar(Aceleracion_barionica, Discrepancia, Error_discrepancia, fmt='k.', alpha=0.2)
-ax3.plot(x, mu_inv_simple(x, popt_abar), color='red')
+x = np.logspace(-8, -12, num=200)
+ax3.errorbar(Aceleracion_barionica, Discrepancia, Error_discrepancia, fmt='k.', alpha=0.2, label='Datos')
+ax3.plot(x, mu_inv_simple(x, popt_abar), color='red', label='Ajuste')
 
 for ax in (ax1, ax2, ax3):
     ax.set_ylim(-1.5, 20)
     ax.set_xscale('log')
     # ax.set_yscale('log')
     ax.set_ylabel(r'$\mathcal{D}=(V/V_b)^2$')
-    ax.axhline(y=1, xmin=0, xmax=1, color='black', alpha=0.5)
+    ax.axhline(y=1, xmin=0, xmax=1, color='black', alpha=0.5, label=r'$\mathcal{D}=1$')
+    ax.legend()
 
 ax1.set_xlabel(r'$r$ [m]')
 ax2.set_xlabel(r'$a_{obs} = V_{obs}^2/r$ [m s$^{-2}$]')
