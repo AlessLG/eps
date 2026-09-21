@@ -38,8 +38,22 @@ Aceleracion_barionica = np.array([], dtype='f')
 # mu_simple(x) = x/1+x
 # mu_estandar(x) = x/sqrt(1+x^2); x = a/a_0
 # a es la variable independiente
-def mu_inv_simple(a, a_0): return (1 + (a/a_0))/(a/a_0)
-def mu_inv_estandar(a, a_0): return np.sqrt(1 + (a/a_0)**2)/(a/a_0)
+def nu_simple_obs(a_obs, a_0):
+    x = a_obs / a_0
+    return (1 + x)/x
+
+def nu_estandar_obs(a_obs, a_0):
+    x = a_obs / a_0
+    return np.sqrt(1 + x**2)/x
+
+def nu_simple_bar(a_bar, a_0):
+    y = a_bar / a_0
+    return 0.5 + 0.5 * np.sqrt(1 + 4/y)
+
+def nu_estandar_bar(a_bar, a_0):
+    y = a_bar / a_0
+    return np.sqrt(0.5 + 0.5 * np.sqrt(1 + 4/y**2))
+
 
 
 # EXTRACCIÓN DE DATOS
@@ -90,11 +104,11 @@ for archivo in archivos_dat:
     Aceleracion_observable  = np.append(Aceleracion_observable, a_obs)
     Aceleracion_barionica   = np.append(Aceleracion_barionica, a_bar)
 
-a0_obs_simple, cov_obs_simple = curve_fit(mu_inv_simple, Aceleracion_observable, Discrepancia, bounds=(10**(-11), 10**(-9)), nan_policy='omit', sigma=Error_discrepancia)
-a0_obs_estandar, cov_obs_estandar = curve_fit(mu_inv_estandar, Aceleracion_observable, Discrepancia, bounds=(10**(-11), 10**(-9)), nan_policy='omit', sigma=Error_discrepancia)
+a0_obs_simple, cov_obs_simple = curve_fit(nu_simple_obs, Aceleracion_observable, Discrepancia, bounds=(10**(-11), 10**(-9)), nan_policy='omit', sigma=Error_discrepancia)
+a0_obs_estandar, cov_obs_estandar = curve_fit(nu_estandar_obs, Aceleracion_observable, Discrepancia, bounds=(10**(-11), 10**(-9)), nan_policy='omit', sigma=Error_discrepancia)
 
-a0_bar_simple, cov_bar_simple = curve_fit(mu_inv_simple, Aceleracion_barionica, Discrepancia, bounds=(10**(-11), 10**(-9)), nan_policy='omit', sigma=Error_discrepancia)
-a0_bar_estandar, cov_bar_estandar = curve_fit(mu_inv_estandar, Aceleracion_barionica, Discrepancia, bounds=(10**(-11), 10**(-9)), nan_policy='omit', sigma=Error_discrepancia)
+a0_bar_simple, cov_bar_simple = curve_fit(nu_simple_bar, Aceleracion_barionica, Discrepancia, bounds=(10**(-11), 10**(-9)), nan_policy='omit', sigma=Error_discrepancia)
+a0_bar_estandar, cov_bar_estandar = curve_fit(nu_estandar_bar, Aceleracion_barionica, Discrepancia, bounds=(10**(-11), 10**(-9)), nan_policy='omit', sigma=Error_discrepancia)
 
 print(a0_obs_simple, np.sqrt(cov_obs_simple))
 print(a0_obs_estandar, np.sqrt(cov_obs_estandar))
@@ -108,25 +122,25 @@ ax1.errorbar(Radio, Discrepancia, Error_discrepancia, fmt='k.', alpha=0.2, label
 
 x = np.logspace(-8, -11, num=200)
 ax2.errorbar(Aceleracion_observable, Discrepancia, Error_discrepancia, fmt='k.', alpha=0.2, label='Datos')
-ax2.plot(x, mu_inv_simple(x, a0_obs_simple), color='red', label=r'Ajuste $\mu$ simple')
-ax2.plot(x, mu_inv_estandar(x, a0_obs_estandar), color='blue', label=r'Ajuste $\mu$ estandar')
+ax2.plot(x, nu_simple_obs(x, a0_obs_simple), color='red', label=r'$\nu$ simple obs')
+ax2.plot(x, nu_estandar_obs(x, a0_obs_estandar), color='blue', label=r'$\nu$ estandar obs')
 
 x = np.logspace(-8, -12, num=200)
 ax3.errorbar(Aceleracion_barionica, Discrepancia, Error_discrepancia, fmt='k.', alpha=0.2, label='Datos')
-ax3.plot(x, mu_inv_simple(x, a0_bar_simple), color='red', label='Ajuste')
-ax3.plot(x, mu_inv_estandar(x, a0_bar_estandar), color='blue', label=r'Ajuste $\mu$ estandar')
+ax3.plot(x, nu_simple_bar(x, a0_bar_simple), color='red', label=r'$\nu$ simple bar')
+ax3.plot(x, nu_estandar_bar(x, a0_bar_estandar), color='blue', label=r'$\nu$ estandar bar')
 
 for ax in (ax1, ax2, ax3):
     ax.set_ylim(-1.5, 20)
     ax.set_xscale('log')
     # ax.set_yscale('log')
-    ax.set_ylabel(r'$\mathcal{D}=(V/V_b)^2$')
+    ax.set_ylabel(r'$\mathcal{D}=(V_{obs}/V_{bar})^2$')
     ax.axhline(y=1, xmin=0, xmax=1, color='black', alpha=0.5, label=r'$\mathcal{D}=1$')
     ax.legend()
 
-ax1.set_xlabel(r'$r$ [m]')
-ax2.set_xlabel(r'$a_{obs} = V_{obs}^2/r$ [m s$^{-2}$]')
-ax3.set_xlabel(r'$a_{bar} = V_{bar}^2/r$ [m s$^{-2}$]')
+ax1.set_xlabel('Radio [m]')
+ax2.set_xlabel(r'Aceleración observada [m s$^{-2}$]')
+ax3.set_xlabel(r'Aceleración bariónica [m s$^{-2}$]')
 
 fig.suptitle(f'Error' r'$\leq$' f'{control_calidad*100}% - {galaxias_consideradas} galaxias consideradas ({(galaxias_consideradas/total_galaxias)*100:.1f}%)')
 fig.tight_layout()
