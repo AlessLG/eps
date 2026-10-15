@@ -2,19 +2,15 @@
 pandas==2.3.3
 numpy==2.2.6
 
-Este código se divide en tres:
-1. Extracción de datos
-2. Control de calidad
-3. La física
-4. Generación de gráficos
-
 Este código:
 Dibuja las curvas de rotación de v_obs y v_bar para toda la muestra del catálogo SPARC (175 galaxias). Se basa fuertemente en el paper de Lelli et al. (2016) para:
 - Justificar Y_disk = 0.5 a lo largo de toda la muestra.
 - Justificar Y_bulb = 1.4 * Y_disk.
-- Calcular v_bar. v_bar = sqrt(abs(vgas)*vgas + Y_disk*abs(vdisk)*vdisk + Y_bul*abs(vbul)*vbul)
+- Calcular v_bar. v_bar = sqrt(abs(vgas)*vgas + Y_disk*abs(vdisk)*vdisk + Y_bulb*abs(vbul)*vbul)
 
-El gráfico de cada galaxia se guarda en una de tres carpetas dependiendo del error de sus datos: error = np.average(errv/vobs), donde vobs (velocidad observada) y errv (error en vobs) son vectores. Los rangos son: [0, 5], (5, 10] y (10, infinito). 
+El gráfico de cada galaxia se guarda en:
+ - Una de tres carpetas dependiendo del error de sus datos: error = np.average(errv/vobs), donde vobs (velocidad observada) y errv (error en vobs) son vectores. Los rangos son: [0, 5], (5, 10] y (10, infinito). 
+ - Una de dos carpetas ningún valor de vbar es mayor que vobs + errv (para el mismo radio): bp (galaxias bien portadas) si esto no ocurre y mp (mal portadas) si sí.
 '''
 
 import matplotlib.pyplot as plt
@@ -28,7 +24,14 @@ archivos_dat = glob.glob(os.path.join(ruta, '../Rotmod_LTG/*.dat'))
 
 ignorar_valores_negativos = True
 
-controlCalidad = 0.05
+a_0 = 1.2e-10
+
+def nu_simple_bar():
+    return 0.5 + 0.5 * np.sqrt(1 + 4*a_0*radio/vbar**2)
+
+# def nu_estandar_bar(a_bar, a_0):
+#     y = a_bar / a_0
+#     return np.sqrt(0.5 + 0.5 * np.sqrt(1 + 4/y**2))
 
 i = 0
 for archivo in archivos_dat:
@@ -52,12 +55,21 @@ for archivo in archivos_dat:
     Y_disk = 0.5 # Según Lelli et al. (2016), valor más realista para el Near-InfraRed (NIR)
     Y_bul = 1.4 * Y_disk # Lelli et al. (2016)
 
+    # FÍSICA
+    # kpc -> m
+    radio = radio * 3.086e19
+    # v: km/s -> m/s
+    vobs, vgas, vdisk, vbul, errv = 1e3*vobs, 1e3*vgas, 1e3*vdisk, 1e3*vbul, 1e3*errv
+
     #vbar_2 = vbar^2
     vbar_2 = abs(vgas)*vgas + Y_disk*abs(vdisk)*vdisk + Y_bul*abs(vbul)*vbul
     vbar = np.sqrt(vbar_2)
+    vmond = vbar * np.sqrt(nu_simple_bar())
 
-    '''Se comentó el siguiente bloque de código, al no ser este un método
-    científico para estimar correctamente el valor de Y_disk.'''
+    radio = radio * (1/3.086e19)
+    vobs, vbar, vmond, errv = 1e-3*vobs, 1e-3*vbar, 1e-3*vmond, 1e-3*errv
+
+    '''Se comentó el siguiente bloque de código, al no ser este un método científico para estimar correctamente el valor de Y_disk.'''
     # D = vobs**2/vbar_2
     # mascara_menor_uno = D < 1
     # Si en algún punto de la curva de rotación, D < 1 (es decir, vbar > vobs),
@@ -72,6 +84,7 @@ for archivo in archivos_dat:
     plt.figure(figsize=[6,3], dpi=300)
     plt.errorbar(radio, vobs, errv, fmt='o-k', alpha=0.3, label=r'$v_{obs}$')
     plt.scatter(radio, vbar, label=r'$v_{bar}$')
+    plt.scatter(radio, vmond, label=r'$v_{mond}$', color='red')
     plt.ylim(bottom=0)
     plt.xlabel(r'Radio [kpc]')
     plt.ylabel(r'$V$ [km/s]')
