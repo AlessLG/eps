@@ -1,5 +1,4 @@
 '''
-pandas==2.3.3
 numpy==2.2.6
 
 Este código:
@@ -15,16 +14,17 @@ El gráfico de cada galaxia se guarda en:
 
 import matplotlib.pyplot as plt
 import numpy as np
-import pandas as pd
 import glob
 import os
 
-ruta = os.getcwd()
-archivos_dat = glob.glob(os.path.join(ruta, '../Rotmod_LTG/*.dat'))
-
-ignorar_valores_negativos = True
+archivos = glob.glob(os.path.join(os.getcwd(), '../Rotmod_LTG/*.dat'))
 
 a_0 = 1.2e-10
+Y_disk = 0.5 # Según Lelli et al. (2016), valor más realista para el Near-InfraRed (NIR)
+Y_bul = 1.4 * Y_disk # Lelli et al. (2016)
+
+error = 0
+i = 0
 
 def nu_simple_bar():
     return 0.5 + 0.5 * np.sqrt(1 + 4*a_0*radio/vbar**2)
@@ -33,27 +33,19 @@ def nu_simple_bar():
 #     y = a_bar / a_0
 #     return np.sqrt(0.5 + 0.5 * np.sqrt(1 + 4/y**2))
 
-i = 0
-for archivo in archivos_dat:
-    # Obtiene los datos de un archivo .dat determinado
-    datos = pd.read_table(archivo, skiprows=3, sep=r'\s+', names=['Rad', 'Vobs', 'errV', 'Vgas', 'Vdisk', 'Vbul', 'SBdisk',	'SBbul'])
-    # Guarda los datos en variables 
-    radio, vobs, errv, vgas, vdisk, vbul = datos['Rad'], datos['Vobs'], datos['errV'], datos['Vgas'], datos['Vdisk'], datos['Vbul']
+for archivo in archivos:
+    gal = np.loadtxt(archivo)
+    radio, vobs, errv, vgas, vdisk, vbul = gal[:,0], gal[:,1], gal[:,2], gal[:,3], gal[:,4], gal[:,5]
+
     nombre_galaxia = os.path.basename(archivo).split('_')[0]
     
-    error = 0
     error = np.average(errv/vobs)
 
-    # Los valores de la velocidad bariónica se vuelven nan si corresponden a valores de vgas negativos
-    if ignorar_valores_negativos:
-        mascara_negativos = vgas < 0
-        if mascara_negativos.any():
-            ultimo_indice_vgas_negativo = np.where(mascara_negativos)[0][-1]
-            # .iloc modifica las filas por su posición (desde 0 hasta el índice)
-            vgas.iloc[:ultimo_indice_vgas_negativo + 1] = np.nan
-
-    Y_disk = 0.5 # Según Lelli et al. (2016), valor más realista para el Near-InfraRed (NIR)
-    Y_bul = 1.4 * Y_disk # Lelli et al. (2016)
+    # identifica el índice del último valor de vgas < 0, convierte a nan todos los valores de vgas desde 0 hasta dicho índice
+    mascara_negativos = vgas < 0
+    if mascara_negativos.any():
+        ultimo_indice_vgas_negativo = np.where(mascara_negativos)[0][-1]
+        vgas[:ultimo_indice_vgas_negativo + 1] = np.nan
 
     # FÍSICA
     # kpc -> m
@@ -105,6 +97,6 @@ for archivo in archivos_dat:
     plt.close()
 
     i += 1
-    if i % 10 == 0: print(f'{(i/len(archivos_dat)*100):.1f}%')
+    if i % 10 == 0: print(f'{(i/len(archivos)*100):.1f}%')
 
 print('Terminado')
