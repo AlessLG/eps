@@ -25,13 +25,17 @@ Y_bul = 1.4 * Y_disk # Lelli et al. (2016)
 
 error = 0
 i = 0
+ppi = 300
 
-def nu_simple_bar():
-    return 0.5 + 0.5 * np.sqrt(1 + 4*a_0*radio/vbar**2)
+def nu_simple_bar(r, v_b, a0):
+    y = v_b**2 / (r * a0) # y = a_bar/a_0
+    return (1 + np.sqrt(1 + 4/y))/2
 
-# def nu_estandar_bar(a_bar, a_0):
-#     y = a_bar / a_0
-#     return np.sqrt(0.5 + 0.5 * np.sqrt(1 + 4/y**2))
+def nu_estandar_bar(r, v_b, a0):
+    y = v_b**2 / (r * a0) # y = a_bar/a_0
+    return np.sqrt((1 + np.sqrt(1 + 4/y**2))/2)
+
+fig, ax = plt.subplots(figsize=[6,3], dpi=ppi)
 
 for archivo in archivos:
     gal = np.loadtxt(archivo)
@@ -56,10 +60,11 @@ for archivo in archivos:
     #vbar_2 = vbar^2
     vbar_2 = abs(vgas)*vgas + Y_disk*abs(vdisk)*vdisk + Y_bul*abs(vbul)*vbul
     vbar = np.sqrt(vbar_2)
-    vmond = vbar * np.sqrt(nu_simple_bar())
+    vmond = vbar * np.sqrt(nu_simple_bar(radio, vbar, a_0))
+    vmond2 = vbar * np.sqrt(nu_estandar_bar(radio, vbar, a_0))
 
     radio = radio * (1/3.086e19)
-    vobs, vbar, vmond, errv = 1e-3*vobs, 1e-3*vbar, 1e-3*vmond, 1e-3*errv
+    vobs, vbar, vmond, vmond2, errv = 1e-3*vobs, 1e-3*vbar, 1e-3*vmond, 1e-3*vmond2, 1e-3*errv
 
     '''Se comentó el siguiente bloque de código, al no ser este un método científico para estimar correctamente el valor de Y_disk.'''
     # D = vobs**2/vbar_2
@@ -72,29 +77,29 @@ for archivo in archivos:
     #     vbar_2 = abs(vgas)*vgas + Y_disk * abs(vdisk) * vdisk + Y_bul * abs(vbul) * vbul
     #     D = vobs**2/vbar_2
     #     mascara_menor_uno = D < 1
-
-    plt.figure(figsize=[6,3], dpi=300)
-    plt.errorbar(radio, vobs, errv, fmt='o-k', alpha=0.3, label=r'$v_{obs}$')
-    plt.scatter(radio, vbar, label=r'$v_{bar}$')
-    plt.scatter(radio, vmond, label=r'$v_{mond}$', color='red')
-    plt.ylim(bottom=0)
-    plt.xlabel(r'Radio [kpc]')
-    plt.ylabel(r'$V$ [km/s]')
     # plt.title(f'{nombre_galaxia} | Error: ' f'{error*100:.1f}% | ' r'$\Upsilon_{\star}$: ' f'{Y_disk:.2f}')
-    plt.title(f'{nombre_galaxia} | Error: ' f'{error*100:.1f}%')
-    plt.legend()
-    plt.tight_layout()
+
+    ax.clear()
+    ax.errorbar(radio, vobs, errv, fmt='o-k', label=r'$v_{obs}$')
+    ax.plot(radio, vbar, label=r'$v_{bar}$', marker='o', linestyle='dashed')
+    ax.plot(radio, vmond, label=r'$v_{mond, sim}$', marker='o', color='red', linestyle='dashed')
+    ax.plot(radio, vmond2, label=r'$v_{mond, est}$', marker='o', color='blue', linestyle='dashed')
+    ax.set_ylim(bottom=0)
+    ax.set_xlabel(r'Radio [kpc]')
+    ax.set_ylabel(r'$V$ [km/s]')
+    ax.set_title(f'{nombre_galaxia} | Error: ' f'{error*100:.1f}%')
+    ax.legend()
+    fig.tight_layout()
     # if error <= 0.05:
-    #     plt.savefig(f'figuras/0err5/{nombre_galaxia}.jpg')
+    #     fig.savefig(f'figuras/0err5/{nombre_galaxia}.jpg')
     # elif error > 0.05 and error <= 0.10:
-    #     plt.savefig(f'figuras/5err10/{nombre_galaxia}.jpg')
+    #     fig.savefig(f'figuras/5err10/{nombre_galaxia}.jpg')
     # else:
-    #     plt.savefig(f'figuras/10err100/{nombre_galaxia}.jpg')
+    #     fig.savefig(f'figuras/10err100/{nombre_galaxia}.jpg')
     if ((vbar > vobs + errv).any() == False): # Si ningún valor de vbar es mayor que vobs + errv, se dispara la condición.
-        plt.savefig(f'figuras/bp/{nombre_galaxia}_{error*100:.1f}.jpg')
+        fig.savefig(f'figuras/bp/{nombre_galaxia}_{error*100:.1f}.jpg')
     else:
-        plt.savefig(f'figuras/mp/{nombre_galaxia}_{error*100:.1f}.jpg')
-    plt.close()
+        fig.savefig(f'figuras/mp/{nombre_galaxia}_{error*100:.1f}.jpg')
 
     i += 1
     if i % 10 == 0: print(f'{(i/len(archivos)*100):.1f}%')
