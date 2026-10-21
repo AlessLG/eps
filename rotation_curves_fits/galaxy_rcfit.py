@@ -25,7 +25,7 @@ Y_bul = 1.4 * Y_disk # Lelli et al. (2016)
 
 error = 0
 i = 0
-ppi = 100
+ppi = 200
 
 def nu_simple_bar(r, v_b, a0):
     y = v_b**2 / (r * a0) # y = a_bar/a_0
@@ -35,9 +35,13 @@ def nu_estandar_bar(r, v_b, a0):
     y = v_b**2 / (r * a0) # y = a_bar/a_0
     return np.sqrt((1 + np.sqrt(1 + 4/y**2))/2)
 
-def nu_exp(r, v_b, a0):
-    y = v_b**2 / (r * a0) # y = a_bar/a_0
-    return 1/(1 - np.exp(-np.sqrt(y)))
+# def nu_exp(r, v_b, a0):
+#     y = v_b**2 / (r * a0) # y = a_bar/a_0
+#     return 1/(1 - np.exp(-np.sqrt(y)))
+
+def nu_bekenstein(r, v_b, a0):
+    y = v_b**2 / (r * a0)
+    return 1 + 1/np.sqrt(y)
 
 fig, ax = plt.subplots(figsize=[6,4], dpi=ppi)
 # fig, ax = plt.subplots(2, 1, figsize=[6,5], dpi=ppi, sharex=True, gridspec_kw={'height_ratios': [1, 0.3], 'hspace': 0})
@@ -56,7 +60,6 @@ for archivo in archivos[:]:
         ultimo_indice_vgas_negativo = np.where(mascara_negativos)[0][-1]
         vgas[:ultimo_indice_vgas_negativo + 1] = np.nan
 
-    # FÍSICA
     # kpc -> m
     radio = radio * 3.086e19
     # v: km/s -> m/s
@@ -67,10 +70,11 @@ for archivo in archivos[:]:
     vbar = np.sqrt(vbar_2)
     vmond = vbar * np.sqrt(nu_simple_bar(radio, vbar, a_0))
     vmond2 = vbar * np.sqrt(nu_estandar_bar(radio, vbar, a_0))
-    vmond3 = vbar * np.sqrt(nu_exp(radio, vbar, a_0))
+    vmond3 = vbar * np.sqrt(nu_bekenstein(radio, vbar, a_0))
 
-    radio = radio * (1/3.086e19)
+    radio = radio / 3.086e19
     vobs, vbar, vmond, vmond2, vmond3, errv = 1e-3*vobs, 1e-3*vbar, 1e-3*vmond, 1e-3*vmond2, 1e-3*vmond3, 1e-3*errv
+    # print(radio, vobs, vbar, vmond, vmond2, vmond3)
 
     '''Se comentó el siguiente bloque de código, al no ser este un método científico para estimar correctamente el valor de Y_disk.'''
     # D = vobs**2/vbar_2
@@ -87,11 +91,11 @@ for archivo in archivos[:]:
 
     ax.clear()
     # ax2.clear()
-    ax.errorbar(radio, vobs, errv, fmt='o-k', label=r'$v_{obs}$', capsize=3)
-    ax.plot(radio, vbar, label=r'$v_{bar}$', marker='o', color='black', mfc='white', mec='black')
-    ax.plot(radio, vmond, label=r'$v_{mond, sim}$', marker='o', color='red', linestyle='dotted')
-    ax.plot(radio, vmond2, label=r'$v_{mond, est}$', marker='o', color='blue', linestyle='dotted')
-    ax.plot(radio, vmond3, label=r'$v_{mond, exp}$', marker='o', color='green')
+    ax.errorbar(radio, vobs, errv, fmt='o-k', label=r'$v_{\text{obs}}$', capsize=3)
+    ax.plot(radio, vbar, label=r'$v_{\text{bar}}$', marker='o', color='black', mfc='white', mec='black')
+    ax.plot(radio, vmond, label=r'$v_{\text{simple}}$', marker='o', color='red', linestyle='dotted')
+    ax.plot(radio, vmond2, label=r'$v_{\text{estándar}}$', marker='o', color='blue', linestyle='dotted')
+    ax.plot(radio, vmond3, label=r'$v_{\text{bekenstein}}$', marker='o', color='green', linestyle='dotted')
     ax.set_ylim(bottom=0)
     ax.set_ylabel('Velocidad [km/s]')
     ax.set_xlabel('Radio [kpc]')
