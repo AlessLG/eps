@@ -35,8 +35,12 @@ def nu_estandar_bar(r, v_b, a0):
     y = v_b**2 / (r * a0) # y = a_bar/a_0
     return np.sqrt((1 + np.sqrt(1 + 4/y**2))/2)
 
-fig, (ax1, ax2) = plt.subplots(2, 1, figsize=[6,5], dpi=ppi, sharex=True, gridspec_kw={'height_ratios': [1, 0.3], 'hspace': 0})
-# fig.subplots_adjust(hspace=.0)
+def nu_exp(r, v_b, a0):
+    y = v_b**2 / (r * a0) # y = a_bar/a_0
+    return 1/(1 - np.exp(-np.sqrt(y)))
+
+fig, ax = plt.subplots(figsize=[6,4], dpi=ppi)
+# fig, ax = plt.subplots(2, 1, figsize=[6,5], dpi=ppi, sharex=True, gridspec_kw={'height_ratios': [1, 0.3], 'hspace': 0})
 
 for archivo in archivos[:]:
     gal = np.loadtxt(archivo)
@@ -63,9 +67,10 @@ for archivo in archivos[:]:
     vbar = np.sqrt(vbar_2)
     vmond = vbar * np.sqrt(nu_simple_bar(radio, vbar, a_0))
     vmond2 = vbar * np.sqrt(nu_estandar_bar(radio, vbar, a_0))
+    vmond3 = vbar * np.sqrt(nu_exp(radio, vbar, a_0))
 
     radio = radio * (1/3.086e19)
-    vobs, vbar, vmond, vmond2, errv = 1e-3*vobs, 1e-3*vbar, 1e-3*vmond, 1e-3*vmond2, 1e-3*errv
+    vobs, vbar, vmond, vmond2, vmond3, errv = 1e-3*vobs, 1e-3*vbar, 1e-3*vmond, 1e-3*vmond2, 1e-3*vmond3, 1e-3*errv
 
     '''Se comentó el siguiente bloque de código, al no ser este un método científico para estimar correctamente el valor de Y_disk.'''
     # D = vobs**2/vbar_2
@@ -80,23 +85,25 @@ for archivo in archivos[:]:
     #     mascara_menor_uno = D < 1
     # plt.title(f'{nombre_galaxia} | Error: ' f'{error*100:.1f}% | ' r'$\Upsilon_{\star}$: ' f'{Y_disk:.2f}')
 
-    ax1.clear()
-    ax2.clear()
-    ax1.errorbar(radio, vobs, errv, fmt='o-k', label=r'$v_{obs}$', capsize=3)
-    ax1.plot(radio, vbar, label=r'$v_{bar}$', marker='o')
-    ax1.plot(radio, vmond, label=r'$v_{mond, sim}$', marker='o', color='red', linestyle='dashed')
-    ax1.plot(radio, vmond2, label=r'$v_{mond, est}$', marker='o', color='blue', linestyle='dashed')
-    ax1.set_ylim(bottom=0)
+    ax.clear()
+    # ax2.clear()
+    ax.errorbar(radio, vobs, errv, fmt='o-k', label=r'$v_{obs}$', capsize=3)
+    ax.plot(radio, vbar, label=r'$v_{bar}$', marker='o', color='black', mfc='white', mec='black')
+    ax.plot(radio, vmond, label=r'$v_{mond, sim}$', marker='o', color='red', linestyle='dotted')
+    ax.plot(radio, vmond2, label=r'$v_{mond, est}$', marker='o', color='blue', linestyle='dotted')
+    ax.plot(radio, vmond3, label=r'$v_{mond, exp}$', marker='o', color='green')
+    ax.set_ylim(bottom=0)
+    ax.set_ylabel('Velocidad [km/s]')
+    ax.set_xlabel('Radio [kpc]')
+    ax.set_title(f'{nombre_galaxia} | Error: ' f'{error*100:.1f}%')
+    ax.legend(loc='lower right')
     # ax1.get_xaxis().set_visible(False)
-    ax1.set_ylabel(r'$V$ [km/s]')
-    ax1.set_title(f'{nombre_galaxia} | Error: ' f'{error*100:.1f}%')
-    ax1.legend()
 
-    ax2.scatter(radio, (vmond - vobs), color='red')
-    ax2.scatter(radio, (vmond2 - vobs), color='blue')
-    ax2.set_xlabel(r'Radio [kpc]')
-    ax2.set_ylabel('Residuales')
-    ax2.axhline(y=0, xmin=0, xmax=1, color='black', alpha=0.5, linestyle='dotted')
+    # ax2.scatter(radio, (vmond - vobs), color='red')
+    # ax2.scatter(radio, (vmond2 - vobs), color='blue')
+    # ax2.set_xlabel(r'Radio [kpc]')
+    # ax2.set_ylabel('Residuales')
+    # ax2.axhline(y=0, xmin=0, xmax=1, color='black', alpha=0.5, linestyle='dotted')
 
     fig.tight_layout()
     # if error <= 0.05:
