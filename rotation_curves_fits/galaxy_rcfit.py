@@ -16,8 +16,12 @@ import matplotlib.pyplot as plt
 import numpy as np
 import glob
 import os
+import csv
 
 archivos = glob.glob(os.path.join(os.getcwd(), '../Rotmod_LTG/*.dat'))
+f = open('resultados.csv', 'w')
+writer = csv.writer(f)
+writer.writerow(['Galaxia', 'X2Sim', 'X2Est', 'X2Bek', 'BP'])
 
 a_0 = 1.2e-10
 Y_disk = 0.5 # Según Lelli et al. (2016), valor más realista para el Near-InfraRed (NIR)
@@ -121,7 +125,23 @@ for archivo in archivos[:]:
     else:
         fig.savefig(f'figuras/mp/{nombre_galaxia}_{error*100:.1f}.jpg')
 
+    no_nan = ~np.isnan(vmond)
+    N = np.sum(no_nan)
+    chi2_red = np.sum( ((vobs[no_nan] - vmond[no_nan]) / errv[no_nan])**2 ) / N
+    chi2_red2 = np.sum( ((vobs[no_nan] - vmond2[no_nan]) / errv[no_nan])**2 ) / N
+    chi2_red3 = np.sum( ((vobs[no_nan] - vmond3[no_nan]) / errv[no_nan])**2 ) / N
+
+    writer.writerow([
+        nombre_galaxia,
+        # residuales de ajuste MOND y velocidad observada
+        round(chi2_red, 2),
+        round(chi2_red2, 2),
+        round(chi2_red3, 2),
+        not ((vbar > vobs + errv).any())
+        ])
+
     i += 1
     if i % 10 == 0: print(f'{(i/len(archivos)*100):.1f}%')
 
+f.close()
 print('Terminado')
