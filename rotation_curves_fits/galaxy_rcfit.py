@@ -10,6 +10,13 @@ Dibuja las curvas de rotación de v_obs y v_bar para toda la muestra del catálo
 El gráfico de cada galaxia se guarda en:
  - Una de tres carpetas dependiendo del error de sus datos: error = np.average(errv/vobs), donde vobs (velocidad observada) y errv (error en vobs) son vectores. Los rangos son: [0, 5], (5, 10] y (10, infinito). 
  - Una de dos carpetas ningún valor de vbar es mayor que vobs + errv (para el mismo radio): bp (galaxias bien portadas) si esto no ocurre y mp (mal portadas) si sí.
+
+ Además, genera un csv con la información procesada de las galaxias. Este incluye las siguientes columnas:
+ - Galaxia - Nombre de la galaxia
+ - Error - np.average(errv/vobs)
+ - X2red - tres columnas del chi cuadrado reducido para cada ajuste de mond, cada uno hecho con una función de interpolación distinta, respecto a la velocidad observada.
+ - RMSE - tres columnas de la raíz del error cuadrático medio para cada ajuste de mond, cada uno hecho con una función de interpolación distinta, respecto a la velocidad observada.
+ - BP - (booleana) si la galaxia es bien portada o no. Se considera mal portada si en algún punto vbar > vobs + errv.
 '''
 
 import matplotlib.pyplot as plt
@@ -21,7 +28,7 @@ import csv
 archivos = glob.glob(os.path.join(os.getcwd(), '../Rotmod_LTG/*.dat'))
 f = open('resultados.csv', 'w')
 writer = csv.writer(f)
-writer.writerow(['Galaxia', 'X2Sim', 'X2Est', 'X2Bek', 'BP'])
+writer.writerow(['Galaxia', 'Error', 'X2red_sim', 'X2red_est', 'X2red_bek', 'RMSE_sim', 'RMSE_est', 'RMSE_bek', 'BP'])
 
 a_0 = 1.2e-10
 Y_disk = 0.5 # Según Lelli et al. (2016), valor más realista para el Near-InfraRed (NIR)
@@ -100,7 +107,7 @@ for archivo in archivos[:]:
     ax.plot(radio, vmond, label=r'$v_{\text{simple}}$', marker='o', color='red', linestyle='dotted')
     ax.plot(radio, vmond2, label=r'$v_{\text{estándar}}$', marker='o', color='blue', linestyle='dotted')
     ax.plot(radio, vmond3, label=r'$v_{\text{bekenstein}}$', marker='o', color='green', linestyle='dotted')
-    ax.set_ylim(bottom=0)
+    # ax.set_ylim(bottom=0)
     ax.set_ylabel('Velocidad [km/s]')
     ax.set_xlabel('Radio [kpc]')
     ax.set_title(f'{nombre_galaxia} | Error: ' f'{error*100:.1f}%')
@@ -125,19 +132,29 @@ for archivo in archivos[:]:
     else:
         fig.savefig(f'figuras/mp/{nombre_galaxia}_{error*100:.1f}.jpg')
 
+    # Se calcula el chi2 reducido de cada ajuste de mond respecto a la velocidad observada. Ignorando nan.
     no_nan = ~np.isnan(vmond)
     N = np.sum(no_nan)
     chi2_red = np.sum( ((vobs[no_nan] - vmond[no_nan]) / errv[no_nan])**2 ) / N
     chi2_red2 = np.sum( ((vobs[no_nan] - vmond2[no_nan]) / errv[no_nan])**2 ) / N
     chi2_red3 = np.sum( ((vobs[no_nan] - vmond3[no_nan]) / errv[no_nan])**2 ) / N
 
+    # Se calcula el RMSE de cada ajuste de mond respecto a la velocidad observada. Ignorando nan.
+    rmse = np.sqrt(np.nanmean((vobs - vmond)**2))
+    rmse2 = np.sqrt(np.nanmean((vobs - vmond2)**2))
+    rmse3 = np.sqrt(np.nanmean((vobs - vmond3)**2))
+
     writer.writerow([
         nombre_galaxia,
+        round(error, 3),
         # residuales de ajuste MOND y velocidad observada
         round(chi2_red, 2),
         round(chi2_red2, 2),
         round(chi2_red3, 2),
-        not ((vbar > vobs + errv).any())
+        round(rmse, 2),
+        round(rmse2, 2),
+        round(rmse3, 2),
+        not ((vbar > vobs + errv).any()) # Si la galaxia es bien o mal portada
         ])
 
     i += 1
