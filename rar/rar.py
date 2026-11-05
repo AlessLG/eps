@@ -18,6 +18,11 @@ for archivo in archivos[:]:
     gal = np.loadtxt(archivo)
     radio, vobs, errv, vgas, vdisk, vbul = gal[:,0], gal[:,1], gal[:,2], gal[:,3], gal[:,4], gal[:,5]
 
+    # kpc -> m
+    radio = radio * 3.086e19
+    # v: km/s -> m/s
+    vobs, vgas, vdisk, vbul, errv = 1e3*vobs, 1e3*vgas, 1e3*vdisk, 1e3*vbul, 1e3*errv
+
     aobs = vobs**2/radio
     abar = abs(vgas)*vgas/radio + Y_disk*abs(vdisk)*vdisk/radio + Y_bul*abs(vbul)*vbul/radio
 
@@ -41,8 +46,16 @@ for archivo in archivos[:]:
 # print(len(A_OBS))
 # print(len(A_BAR))
 
-plt.figure(figsize=(8,8), dpi=300)
-plt.hist2d(A_BAR, A_OBS)
-plt.xscale('log')
-plt.yscale('log')
+A_BAR = np.log10(A_BAR)
+A_OBS = np.log10(A_OBS)
+
+plt.figure(figsize=(6,6), dpi=300)
+# plt.hist2d(A_BAR, A_OBS, cmap='Blues')
+plt.hist2d(A_BAR, A_OBS, bins=[50, 50], cmap='Blues')
+plt.axline((1, 1), slope=1)
+plt.xlim(-12.5, -8)
+plt.ylim(-12.5, -8)
+# plt.xscale('log')
+# plt.yscale('log')
+plt.tight_layout()
 plt.savefig('hist2d.pdf')
