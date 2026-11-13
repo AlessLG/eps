@@ -2,6 +2,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 import glob
 import os
+from scipy.stats import norm
 
 # Vectores para almacenado de datos
 A_OBS = np.array([], dtype='f')
@@ -10,6 +11,10 @@ A_BAR = np.array([], dtype='f')
 a_0 = 1.2e-10
 Y_disk = 0.5 # Según Lelli et al. (2016), valor más realista para el Near-InfraRed (NIR)
 Y_bul = 1.4 * Y_disk # Lelli et al. (2016)
+
+def nu_simple_bar(a_bar, a_0):
+    y = a_bar / a_0
+    return 0.5 + 0.5 * np.sqrt(1 + 4/y)
 
 archivos = glob.glob(os.path.join(os.getcwd(), '../Rotmod_LTG/*.dat'))
 
@@ -46,16 +51,39 @@ for archivo in archivos[:]:
 # print(len(A_OBS))
 # print(len(A_BAR))
 
-A_BAR = np.log10(A_BAR)
-A_OBS = np.log10(A_OBS)
+ejes = np.logspace(start=-12.5, stop=-8, num=75, base=10.0)
+amond = ejes * nu_simple_bar(ejes, a_0)
+# discrepancia = np.array([])
+# for j in range(len(A_OBS)):
+#     d = A_OBS[j] - A_BAR[j] * nu_simple_bar(A_BAR[j], a_0)
+#     discrepancia = np.append(discrepancia, d)
+plt.plot(ejes, amond)
 
-plt.figure(figsize=(6,6), dpi=300)
-# plt.hist2d(A_BAR, A_OBS, cmap='Blues')
-plt.hist2d(A_BAR, A_OBS, bins=[50, 50], cmap='Blues')
+plt.hist2d(A_BAR, A_OBS, bins=[ejes, ejes], cmap='Blues')
 plt.axline((1, 1), slope=1)
-plt.xlim(-12.5, -8)
-plt.ylim(-12.5, -8)
-# plt.xscale('log')
-# plt.yscale('log')
+plt.xscale('log')
+plt.yscale('log')
+# plt.xlabel(r'$\log{(a_{bar})}$')
+# plt.ylabel(r'$\log{(a_{obs})}$')
+plt.xlabel(r'$a_{bar}$')
+plt.ylabel(r'$a_{obs}$')
+plt.gca().set_box_aspect(1)
 plt.tight_layout()
 plt.savefig('hist2d.pdf')
+
+mask = (A_OBS > 0) & (A_BAR > 0)
+res = np.log10(A_OBS[mask]) - np.log10(A_BAR[mask] * nu_simple_bar(A_BAR[mask], a_0))
+
+bins = np.linspace(-0.7, 0.7, 20)
+mu, sigma = norm.fit(res)
+x = np.linspace(-0.7, 0.7, 300)
+
+plt.figure(figsize=(5, 5), dpi=200)
+plt.hist(res, bins=bins, color='cornflowerblue', edgecolor='k', linewidth=0.3)
+plt.plot(x, norm.pdf(x, mu, sigma) * len(res) * np.diff(bins)[0], 'k')
+plt.xlabel(r'Residuales [dex]')
+plt.ylabel('Mediciones')
+plt.tight_layout()
+plt.savefig('residuales.pdf')
+
+plt.figure(figsize=(5, 5), dpi=200)
